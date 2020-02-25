@@ -1,5 +1,7 @@
 use hello::cross_line::*;
 use std::borrow::Cow;
+use std::fmt::{Debug, Display};
+
 
 fn main() {
     let n = 10;
@@ -16,7 +18,7 @@ fn main() {
     println!("{}, {}, {}", sum, pro, f);
     println!("{}", remove_spaces("hello world!"));
     let s = remove_spaces("Herman"); // s is a Cow::Borrowed variant
-    //    let len = s.len(); // immutable function call using Deref
+                                     //    let len = s.len(); // immutable function call using Deref
     let mut owned: String = s.into_owned(); // memory is allocated for a new string
     owned.push('a');
     let p = Person {
@@ -55,6 +57,153 @@ fn main() {
     abs_all(&mut input);
     assert_eq!(input, Cow::Owned(vec![0, 1, 2]) as Cow<[i32]>);
     println!("{:?}", b);
+    give_me(35);
+    give_me("String");
+    println!("{}", 33_i32.to_out());
+    show_me("Daniel");
+    let add_later = lazy_adder(1024, 2048);
+    println!("{:?}", add_later());
+    println!("{}", surround_with_braces("Hello"));
+
+    let shapes: Vec<&dyn Area> = vec![&Square(3f32), &Rectangle(4f32, 2f32)];
+    for s in shapes {
+        println!("{:?}", s);
+    }
+    let a = Foo;
+
+    let closure =  || {
+        let b = a.clone();
+    };
+
+    println!("{:?}", a);
+
+    let bag = Bag { food: Food::Cake };
+    match bag.food {
+        Food::Cake => println!("I got cake"),
+        ref a => println!("I got {:?}", a)
+    }
+    println!("{:?}", bag);
+    let a = SomeRef { part: &43 };
+    println!("{:?}", a);
+
+    let a: Vec<u8> = vec![];
+    let b: Vec<u8> = vec![];
+    let decoder = Decoder {schema: &a, reader: &b};
+
+
+    let my_result = Ok::<_, ()>(64);
+
+    println!("{}", type_of(&my_result));
+
+    let my_err = Err::<(), f32>(345.3);
+    println!("{}", type_of(&my_err));
+}
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
+
+fn type_of<T>(_:&T) -> &'static str {
+   std::any::type_name::<T>()
+}
+
+struct Decoder<'a, 'b, S, R> {
+    schema: &'a S,
+    reader: &'b R
+}
+
+impl<'a, 'b, S, R> Decoder<'a, 'b, S, R>
+    where 'a: 'b {
+
+}
+
+#[derive(Debug)]
+struct SomeRef<'a, T> {
+    part: &'a T
+}
+
+#[derive(Debug)]
+enum Food {
+    Cake,
+    Rice
+}
+
+#[derive(Debug)]
+struct Bag {
+    food: Food
+}
+
+#[derive(Debug, Clone)]
+struct Foo;
+
+#[derive(Debug)]
+struct Square(f32);
+#[derive(Debug)]
+struct Rectangle(f32, f32);
+
+trait Area: Debug {
+    fn get_area(&self) -> f32;
+}
+
+impl Area for Square {
+    fn get_area(&self) -> f32 {
+        self.0 * self.0
+    }
+}
+
+impl Area for Rectangle {
+    fn get_area(&self) -> f32 {
+        self.0 * self.1
+    }
+}
+
+fn surround_with_braces(val: impl Display) -> impl Display {
+    format!("{{ {} }}", val)
+}
+
+fn lazy_adder(a: u32, b: u32) -> impl Fn() -> u32 {
+    move || a + b
+}
+
+fn show_me<T>(val: T)
+where
+    T: Display,
+{
+    println!("{}", val);
+}
+
+fn add_thing<T>(fst: T, snd: T)
+where
+    T: std::ops::Add,
+{
+    let _ = fst + snd;
+}
+
+pub trait ATrait {
+    type Out;
+    fn to_out(&self) -> Self::Out;
+}
+
+impl ATrait for i32 {
+    type Out = i32;
+
+    fn to_out(&self) -> Self::Out {
+        99
+    }
+}
+
+struct Container<T> {
+    item: T,
+}
+
+impl<T> Container<T> {
+    fn new(item: T) -> Self {
+        Container { item }
+    }
+}
+
+fn give_me<T>(t: T) {
+    let _ = t;
 }
 
 fn abs_all(input: &mut Cow<[i32]>) {
@@ -101,15 +250,15 @@ impl Person {
 }
 
 struct Items<'a, X: 'a>
-    where
-        [X]: ToOwned<Owned = Vec<X>>,
+where
+    [X]: ToOwned<Owned = Vec<X>>,
 {
     values: Cow<'a, [X]>,
 }
 
 impl<'a, X: Clone + 'a> Items<'a, X>
-    where
-        [X]: ToOwned<Owned = Vec<X>>,
+where
+    [X]: ToOwned<Owned = Vec<X>>,
 {
     fn new(v: Cow<'a, [X]>) -> Self {
         Items { values: v }
